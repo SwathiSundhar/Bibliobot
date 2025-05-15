@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Chatbot - Mood-Based Book Recommender</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/compromise"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+       /**/ body{
+            font-family: 'Poppins', sans-serif;
+        }
+    .home-btn {
+            position: fixed;
+            top: 30px;
+            right: 40px;
+            background: #4955d8;
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s ease;
+    }
+
+    .glass {
+      background: rgb(255, 255, 255);
+      backdrop-filter: blur(8px);
+      border-radius: 15px;
+      padding: 10px;
+      max-width: 900px;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .mood-btn {
+      background: #e0f2fe;
+      border-radius: 25px;
+      padding: 12px 25px;
+      margin: 10px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: background 0.3s;
+      color: #1e3a8a;
+      font-weight: 600;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .mood-btn:hover {
+      background: #bae6fd;
+    }
+
+    .chat-bubble {
+      max-width: 90%;
+      padding: 12px 18px;
+      border-radius: 15px;
+      margin: 5px 0;
+      display: inline-block;
+    }
+
+    .user-msg {
+      background: #1e3a8a;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 0;
+    }
+
+    .bot-msg {
+      background: #2563eb;
+      color: white;
+      align-self: flex-start;
+      border-bottom-left-radius: 0;
+    }
+
+    .book-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: #f0f9ff;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 15px;
+      max-width: 100%;
+      width: 100%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      color: #1e3a8a;
+    }
+
+    .book-item img {
+      width: 70px;
+      height: 100px;
+      border-radius: 5px;
+    }
+
+    .book-item a {
+      color: #2563eb;
+      text-decoration: underline;
+      font-weight: 500;
+    }
+
+    .recommendations {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 20px;
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      color: #1e3a8a;
+    }
+
+    .recommendations p {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="bg-gray-200 min-h-screen flex flex-col items-center p-6 text-blue-600">
+  <!-- Header -->
+  <div class="w-full max-w-3xl flex justify-between items-center mb-4">
+    <h1 class="text-3xl font-bold text-blue-600">📚 BiblioBot - Mood-Based Recommender</h1>
+  </div>
+
+  <div class="home-btn" onclick="window.location.href='index.html'">🏠</div>
+
+  <!-- Recommendations -->
+  <div id="recommendations" class="recommendations glass p-6 flex flex-col items-center">
+    <p>Select a mood below to get book recommendations:</p>
+  </div>
+
+  <!-- Mood Buttons -->
+  <div class="w-full max-w-3xl glass p-6 flex flex-wrap justify-center">
+    <button class="mood-btn" onclick="fetchBooks('happy', 5)">I am feeling happy 😄</button>
+    <button class="mood-btn" onclick="fetchBooks('sad', 5)">I am feeling sad 😢</button>
+    <button class="mood-btn" onclick="fetchBooks('bored', 5)">I am feeling bored 😴</button>
+    <button class="mood-btn" onclick="fetchBooks('curious', 5)">I am feeling curious 🤔</button>
+    <button class="mood-btn" onclick="fetchBooks('adventurous', 5)">I am feeling adventurous 🌍</button>
+    <button class="mood-btn" onclick="fetchBooks('emotional', 5)">I am feeling emotional 💔</button>
+    <button class="mood-btn" onclick="fetchBooks('creative', 5)">I am feeling creative 🎨</button>
+    <button class="mood-btn" onclick="fetchBooks('anxious', 5)">I am feeling anxious 😟</button>
+    <button class="mood-btn" onclick="fetchBooks('inspired', 5)">I am feeling inspired ✨</button>
+    <button class="mood-btn" onclick="fetchBooks('dull', 5)">I am feeling dull 💤</button>
+  </div>
+
+  <script>
+    async function fetchBooks(mood, numResults) {
+      let recommendationsDiv = document.getElementById("recommendations");
+      recommendationsDiv.innerHTML = `<p>Fetching books for your mood... (feeling ${mood})</p>`;
+
+      let searchMap = {
+        happy: "comedy books",
+        sad: "self-help books",
+        bored: "fantasy books",
+        curious: "mystery books",
+        adventurous: "crime books",
+        emotional: "travel books",
+        creative: "art books",
+        anxious: "self-development books",
+        inspired: "motivational books",
+        dull: "thriller books"
+      };
+
+      let query = searchMap[mood];
+      let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=30`;
+
+      let response = await fetch(url);
+      let data = await response.json();
+
+      if (!data.items || data.items.length === 0) {
+        recommendationsDiv.innerHTML = `<p>Sorry, I couldn't find any books for "${mood}". Try another mood!</p>`;
+      } else {
+        recommendationsDiv.innerHTML = `<p>Here are some ${mood} mood books for you:</p>`;
+
+        let books = data.items.sort(() => 0.5 - Math.random()).slice(0, numResults);
+
+        books.forEach(book => {
+          let title = book.volumeInfo.title || "Unknown Title";
+          let author = book.volumeInfo.authors ? book.volumeInfo.authors.join(", ") : "Unknown Author";
+          let thumbnail = book.volumeInfo.imageLinks ? book.volumeInfo.imageLinks.thumbnail : "https://via.placeholder.com/70x100?text=No+Cover";
+          let link = book.volumeInfo.infoLink || "#";
+
+          let bookItem = document.createElement("div");
+          bookItem.className = "book-item bot-msg";
+
+          bookItem.innerHTML = `
+            <img src="${thumbnail}" alt="${title}">
+            <div>
+              <strong>${title}</strong> by ${author} <br>
+              <a href="${link}" target="_blank">📖 View</a>
+            </div>
+          `;
+
+          recommendationsDiv.appendChild(bookItem);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
